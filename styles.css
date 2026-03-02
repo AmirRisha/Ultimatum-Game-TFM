@@ -1,0 +1,286 @@
+:root {
+  --bg: #f4f4ee;
+  --panel: #ffffff;
+  --ink: #1d2422;
+  --muted: #5a655f;
+  --accent: #0f766e;
+  --accent-soft: #d9f3ee;
+  --danger: #8a1c1c;
+  --danger-soft: #ffe4e4;
+  --border: #d7ddd8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 10% 0%, #d4ede6 0, transparent 45%),
+    radial-gradient(circle at 90% 100%, #eedfcf 0, transparent 40%),
+    var(--bg);
+}
+
+.container {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 1.2rem;
+  display: grid;
+  gap: 0.9rem;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 8px 20px rgba(26, 39, 32, 0.06);
+  min-height: 0;
+}
+
+h1,
+h2 {
+  margin: 0 0 0.5rem 0;
+  font-family: "Space Grotesk", "IBM Plex Sans", sans-serif;
+}
+
+h3 {
+  margin: 0.3rem 0;
+  font-family: "Space Grotesk", "IBM Plex Sans", sans-serif;
+  font-size: 1rem;
+}
+
+p,
+ol {
+  margin: 0.25rem 0;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 0.8rem;
+}
+
+label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.95rem;
+}
+
+input,
+select,
+button {
+  font: inherit;
+}
+
+input,
+select {
+  width: 100%;
+  padding: 0.5rem 0.6rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #fff;
+}
+
+input[type="checkbox"] {
+  width: auto;
+  padding: 0;
+  border: none;
+  accent-color: var(--accent);
+}
+
+button {
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 0.55rem 0.85rem;
+  cursor: pointer;
+  background: var(--accent);
+  color: #fff;
+}
+
+button:hover {
+  filter: brightness(0.94);
+}
+
+button.accept {
+  background: var(--accent);
+}
+
+button.reject {
+  background: var(--danger);
+}
+
+.row {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.feedback {
+  margin-top: 0.7rem;
+  padding: 0.65rem;
+  border-radius: 8px;
+  background: var(--accent-soft);
+}
+
+.logic-card {
+  margin-top: 0.7rem;
+  padding: 0.75rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #f7fbf9;
+}
+
+.logic-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.2rem 0;
+}
+
+.logic-label {
+  color: var(--muted);
+}
+
+.model-snapshot {
+  margin-top: 0.2rem;
+}
+
+.model-snapshot-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  gap: 0.4rem 1rem;
+  margin-top: 0.4rem;
+}
+
+.model-snapshot-grid p {
+  margin: 0;
+}
+
+.table-wrap {
+  margin-top: 0.8rem;
+  overflow-x: auto;
+}
+
+.debug-json {
+  width: 100%;
+  min-height: 140px;
+  resize: vertical;
+  padding: 0.55rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #f8faf8;
+  font-family: "IBM Plex Mono", "Consolas", monospace;
+  font-size: 0.86rem;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 760px;
+}
+
+th,
+td {
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  padding: 0.45rem 0.35rem;
+  vertical-align: top;
+  font-size: 0.92rem;
+}
+
+.rationale-cell {
+  min-width: 360px;
+}
+
+.rationale-line {
+  line-height: 1.35;
+}
+
+.details-toggle {
+  margin-top: 0.35rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--accent);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.rationale-details {
+  margin-top: 0.35rem;
+  padding: 0.45rem 0.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #f8faf8;
+}
+
+.rationale-details p {
+  margin: 0.2rem 0;
+}
+
+tbody tr.belief-top {
+  background: #edf8f3;
+}
+
+.belief-bar-track {
+  width: 100%;
+  min-width: 140px;
+  height: 10px;
+  background: #e7efea;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.belief-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: inherit;
+}
+
+.advanced-details {
+  margin-top: 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.45rem 0.6rem;
+  background: #fbfcfb;
+}
+
+.advanced-details summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.advanced-grid {
+  display: grid;
+  gap: 0.2rem;
+  margin-top: 0.4rem;
+}
+
+.hidden {
+  display: none;
+}
+
+@media (max-width: 700px) {
+  .container {
+    padding: 0.8rem;
+  }
+  .panel {
+    padding: 0.8rem;
+  }
+  .model-snapshot-grid {
+    grid-template-columns: 1fr;
+  }
+  table {
+    min-width: 620px;
+  }
+}

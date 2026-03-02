@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Adaptive Repeated Ultimatum Game</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <section class="panel">
+        <h1>Adaptive Repeated Ultimatum Game</h1>
+      </section>
+
+      <section class="panel">
+        <h2>Instructions</h2>
+        <p>
+          You may be matched with a rule-based player that behaves in one of two consistent ways:
+          one that prioritizes its own monetary payoff, and one that also considers fairness in the
+          distribution of payoffs. The behavior of this player is pre-programmed and does not
+          change during the experiment.
+        </p>
+        <ol>
+          <li>Configure mode and treatment parameters.</li>
+          <li>Play all rounds (accept/reject or propose split).</li>
+          <li>Review round-by-round outcomes and download CSV logs.</li>
+        </ol>
+      </section>
+
+      <section class="panel">
+        <h2>Session Setup</h2>
+        <div class="grid">
+          <label>
+            Mode
+            <select id="modeSelect">
+              <option value="human_responder_vs_bot_proposer">Human Responder vs Bot Proposer</option>
+              <option value="human_proposer_vs_bot_responder">Human Proposer vs Bot Responder</option>
+            </select>
+          </label>
+
+          <label>
+            Rounds
+            <input id="roundsInput" type="number" min="1" max="200" step="1" value="10" />
+          </label>
+
+          <label>
+            Stake
+            <select id="stakeSelect">
+              <option value="20">20</option>
+              <option value="200" selected>200</option>
+              <option value="2000">2000</option>
+              <option value="20000">20000</option>
+            </select>
+          </label>
+
+          <label>
+            Wealth
+            <select id="wealthSelect">
+              <option value="0">0</option>
+              <option value="1" selected>1</option>
+            </select>
+          </label>
+
+          <label>
+            Offer Input Mode
+            <select id="offerUnitSelect">
+              <option value="amount">Rupees</option>
+              <option value="share">Percentage</option>
+            </select>
+          </label>
+
+          <label>
+            Policy Mode
+            <select id="policyModeSelect">
+              <option value="belief" selected>belief (default)</option>
+              <option value="nn">nn (optional)</option>
+            </select>
+          </label>
+
+          <label>
+            Priors
+            <select id="priorsSelect">
+              <option value="literature" selected>Literature-based (Prior 2)</option>
+              <option value="calibration">Calibration priors</option>
+            </select>
+          </label>
+
+          <label>
+            Research Mode
+            <input id="researchModeToggle" type="checkbox" />
+          </label>
+        </div>
+        <button id="startBtn">Start Session</button>
+        <p id="modelStatus" class="muted"></p>
+      </section>
+
+      <section id="decisionPanel" class="panel hidden">
+        <h2>Decisions</h2>
+        <p id="roundStatus"></p>
+
+        <div id="mode1Block" class="hidden">
+          <p id="botOfferText"></p>
+          <div class="row">
+            <button id="acceptBtn" class="accept">Accept</button>
+            <button id="rejectBtn" class="reject">Reject</button>
+          </div>
+        </div>
+
+        <div id="mode2Block" class="hidden">
+          <label id="offerInputLabel" for="offerInput">Your offer</label>
+          <input id="offerInput" type="number" min="0" step="1" />
+          <button id="submitOfferBtn">Submit Offer</button>
+        </div>
+
+        <p id="decisionFeedback" class="feedback"></p>
+        <section id="decisionLogicCard" class="logic-card hidden">
+          <h3>Decision Logic</h3>
+          <div class="logic-row">
+            <span class="logic-label">Highest posterior type:</span>
+            <span id="logicHighestType"></span>
+          </div>
+          <div class="logic-row">
+            <span class="logic-label">Mixture-based P(accept):</span>
+            <span id="logicMixtureAccept"></span>
+          </div>
+          <div class="logic-row">
+            <span class="logic-label">Chosen offer:</span>
+            <span id="logicChosenOffer"></span>
+          </div>
+          <div class="logic-row">
+            <span class="logic-label">Expected utility:</span>
+            <span id="logicExpectedUtility"></span>
+          </div>
+          <div class="logic-row">
+            <span class="logic-label">Best EU:</span>
+            <span id="logicBestEu"></span>
+          </div>
+          <p class="muted">Decision uses full belief distribution.</p>
+        </section>
+      </section>
+
+      <section id="debugPanel" class="panel hidden">
+        <h2>Debug</h2>
+        <section class="model-snapshot">
+          <h3>Model Snapshot</h3>
+          <div class="model-snapshot-grid">
+            <p><strong>Priors:</strong> <span id="snapshotPriors"></span></p>
+            <p><strong>Policy:</strong> <span id="snapshotPolicy"></span></p>
+            <p><strong>Most probable type:</strong> <span id="snapshotTopType"></span></p>
+            <p><strong>Bot type:</strong> <span id="snapshotBotType"></span></p>
+            <p><strong>Beta used:</strong> <span id="snapshotBetaUsed"></span></p>
+            <p><strong>Mixture P(accept):</strong> <span id="snapshotMixturePAccept"></span></p>
+          </div>
+        </section>
+        <p id="debugMixtureNote" class="muted">
+          Note: Mixture-based = posterior-weighted average over latent types.
+        </p>
+        <div class="table-wrap">
+          <h3>Posterior Beliefs</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Probability</th>
+                <th>Visual bar</th>
+              </tr>
+            </thead>
+            <tbody id="debugBeliefsBody"></tbody>
+          </table>
+        </div>
+
+        <details id="advancedDetails" class="advanced-details">
+          <summary>Advanced Model Details</summary>
+          <div class="advanced-grid">
+            <p class="muted"><strong>Priors source:</strong> <span id="advPriorsSource"></span></p>
+            <p class="muted"><strong>Policy:</strong> <span id="advPolicy"></span></p>
+            <p class="muted"><strong>Bot type:</strong> <span id="advBotType"></span></p>
+            <p class="muted"><strong>Beta used:</strong> <span id="advBetaUsed"></span></p>
+            <p class="muted">
+              <strong>Current mixture-based P(accept):</strong> <span id="advCurrentPAccept"></span>
+            </p>
+          </div>
+        </details>
+
+        <div id="debugGridWrap" class="table-wrap hidden">
+          <h3>Proposer Grid (Expected Accept / EV / EU)</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Offer</th>
+                <th>Share</th>
+                <th>Expected Accept</th>
+                <th>EV (Max)</th>
+                <th>EU (FS β=current)</th>
+                <th>EU (β=0.25)</th>
+                <th>EU (β=0.60)</th>
+              </tr>
+            </thead>
+            <tbody id="debugGridBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="resultsPanel" class="panel hidden">
+        <h2>Results</h2>
+        <p id="payoffStatus"></p>
+        <div class="row">
+          <button id="downloadCsvBtn">Download CSV Log</button>
+          <button id="resetBtn">Reset</button>
+        </div>
+        <div class="table-wrap">
+          <table id="resultsTable">
+            <thead>
+              <tr>
+                <th>Round</th>
+                <th>Offer</th>
+                <th>Decision</th>
+                <th>Inferred Type</th>
+                <th>Expected Accept</th>
+                <th>Rationale</th>
+              </tr>
+            </thead>
+            <tbody id="resultsBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

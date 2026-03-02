@@ -1,0 +1,33 @@
+{
+  "source_data": "data/20100982_DATA.csv",
+  "model": "logit_reject ~ wealth + stake200 + stake2000 + stake20000 + offer_share",
+  "sample_size": 458,
+  "fitted_at": "2026-02-23T18:45:00.874Z",
+  "coefficients": {
+    "beta0": -0.108929,
+    "beta1": 0.287473,
+    "beta2": 0.162369,
+    "beta3": -0.623143,
+    "beta4": -2.731341,
+    "beta5": -3.040627
+  },
+  "priors": {
+    "responder": {
+      "money_maximizer": 0.299523356257921,
+      "fairness_sensitive": 0.22069577133611348,
+      "stake_sensitive": 0.22917120492800178,
+      "noisy": 0.25060966747796365
+    },
+    "proposer": {
+      "money_maximizer": 0.42516109576611594,
+      "fairness_sensitive": 0.10663538514427902,
+      "stake_sensitive": 0.3115366926490281,
+      "noisy": 0.15666682644057692
+    }
+  },
+  "fit_metrics": {
+    "log_likelihood_model": -276.8419,
+    "log_likelihood_null": -294.4353,
+    "mcfadden_r2": 0.0598
+  }
+}
