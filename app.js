@@ -15,6 +15,11 @@ const TYPE_COLORS = {
   stake_sensitive: "#c26d1d",
   noisy: "#7a8a80",
 };
+const PROPOSER_SELECTION_LABELS = {
+  softmax: "Softmax (default)",
+  proportional_ev: "Proportional EV/EU (EV / ΣEV)",
+  normal_around_best: "Normal around best (Gaussian)",
+};
 
 const elements = {
   modeSelect: document.querySelector("#modeSelect"),
@@ -23,6 +28,8 @@ const elements = {
   wealthSelect: document.querySelector("#wealthSelect"),
   offerUnitSelect: document.querySelector("#offerUnitSelect"),
   policyModeSelect: document.querySelector("#policyModeSelect"),
+  proposerSelectionModeSelect: document.querySelector("#proposerSelectionModeSelect"),
+  proposerNormalSigmaInput: document.querySelector("#proposerNormalSigmaInput"),
   priorsSelect: document.querySelector("#priorsSelect"),
   researchModeToggle: document.querySelector("#researchModeToggle"),
   startBtn: document.querySelector("#startBtn"),
@@ -53,6 +60,7 @@ const elements = {
   snapshotBotType: document.querySelector("#snapshotBotType"),
   snapshotBetaUsed: document.querySelector("#snapshotBetaUsed"),
   snapshotMixturePAccept: document.querySelector("#snapshotMixturePAccept"),
+  snapshotProposerSelection: document.querySelector("#snapshotProposerSelection"),
   debugBeliefsBody: document.querySelector("#debugBeliefsBody"),
   debugGridWrap: document.querySelector("#debugGridWrap"),
   debugGridBody: document.querySelector("#debugGridBody"),
@@ -75,6 +83,8 @@ let session = null;
 let calibrationMessage = "Calibration unavailable.";
 let nnMessage = "NN unavailable.";
 let selectedOfferShareForDebug = null;
+let proposerSelectionMode = "softmax";
+let proposerNormalSigmaSteps = 1.5;
 
 function show(element, visible) {
   if (!element) {
@@ -103,6 +113,54 @@ function formatPriorsSourceLabel(source) {
 
 function formatPolicyLabel(mode) {
   return mode === "nn" ? "Neural-assisted" : "Belief-based";
+}
+
+function clampNumber(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function normalizeProposerSelectionMode(value) {
+  return PROPOSER_SELECTION_LABELS[value] ? value : "softmax";
+}
+
+function normalizeProposerNormalSigmaSteps(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) {
+    return 1.5;
+  }
+  return clampNumber(numeric, 0.2, 10);
+}
+
+function formatProposerSelectionLabel(mode) {
+  return PROPOSER_SELECTION_LABELS[mode] ?? PROPOSER_SELECTION_LABELS.softmax;
+}
+
+function formatProposerSelectionSummary(mode, sigmaSteps) {
+  const label = formatProposerSelectionLabel(mode);
+  if (mode === "normal_around_best") {
+    return `${label} (σ steps: ${Number(sigmaSteps).toFixed(1)})`;
+  }
+  return label;
+}
+
+function syncProposerSelectionStateFromInputs() {
+  proposerSelectionMode = normalizeProposerSelectionMode(
+    elements.proposerSelectionModeSelect?.value
+  );
+  proposerNormalSigmaSteps = normalizeProposerNormalSigmaSteps(
+    elements.proposerNormalSigmaInput?.value
+  );
+}
+
+function refreshProposerSelectionControls() {
+  if (elements.proposerSelectionModeSelect) {
+    elements.proposerSelectionModeSelect.value = proposerSelectionMode;
+  }
+  if (elements.proposerNormalSigmaInput) {
+    elements.proposerNormalSigmaInput.value = String(proposerNormalSigmaSteps);
+    elements.proposerNormalSigmaInput.disabled =
+      proposerSelectionMode !== "normal_around_best";
+  }
 }
 
 function escapeHtml(value) {
@@ -393,6 +451,16 @@ function renderDebugPanel() {
   elements.snapshotMixturePAccept.textContent = Number.isFinite(Number(debug.expectedAcceptProb))
     ? Number(debug.expectedAcceptProb).toFixed(4)
     : "n/a";
+  const proposerMode = normalizeProposerSelectionMode(
+    debug.proposerSelectionMode ?? session?.config?.proposerSelectionMode ?? "softmax"
+  );
+  const sigmaSteps = normalizeProposerNormalSigmaSteps(
+    session?.config?.proposerNormalSigmaSteps ?? proposerNormalSigmaSteps
+  );
+  elements.snapshotProposerSelection.textContent = formatProposerSelectionSummary(
+    proposerMode,
+    sigmaSteps
+  );
 
   elements.advPriorsSource.textContent = priorsSource;
   elements.advPolicy.textContent = debug.policyMode ?? "belief";
@@ -520,6 +588,8 @@ function nextRoundPrompt() {
 }
 
 function startSession() {
+  syncProposerSelectionStateFromInputs();
+  refreshProposerSelectionControls();
   const config = {
     mode: currentMode(),
     policyMode: elements.policyModeSelect.value,
@@ -527,6 +597,8 @@ function startSession() {
     rounds: Number(elements.roundsInput.value),
     stake: Number(elements.stakeSelect.value),
     wealth: Number(elements.wealthSelect.value),
+    proposerSelectionMode,
+    proposerNormalSigmaSteps,
   };
   session = new RepeatedUltimatumSession(
     config,
@@ -637,6 +709,16 @@ function bindEvents() {
   elements.offerUnitSelect.addEventListener("change", updateOfferInputLabel);
   elements.modeSelect.addEventListener("change", renderModeBlocks);
   elements.stakeSelect.addEventListener("change", updateOfferInputLabel);
+  elements.proposerSelectionModeSelect?.addEventListener("change", () => {
+    syncProposerSelectionStateFromInputs();
+    refreshProposerSelectionControls();
+    renderDebugPanel();
+  });
+  elements.proposerNormalSigmaInput?.addEventListener("change", () => {
+    syncProposerSelectionStateFromInputs();
+    refreshProposerSelectionControls();
+    renderDebugPanel();
+  });
   elements.researchModeToggle.addEventListener("change", () => {
     if (session && !session.isComplete()) {
       nextRoundPrompt();
@@ -650,6 +732,8 @@ async function init() {
   bindEvents();
   renderModeBlocks();
   updateOfferInputLabel();
+  syncProposerSelectionStateFromInputs();
+  refreshProposerSelectionControls();
   show(elements.decisionPanel, false);
   show(elements.debugPanel, false);
   show(elements.resultsPanel, false);

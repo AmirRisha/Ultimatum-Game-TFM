@@ -78,6 +78,28 @@
           </label>
 
           <label>
+            Proposer Selection
+            <select id="proposerSelectionModeSelect">
+              <option value="softmax" selected>Softmax (default)</option>
+              <option value="proportional_ev">Proportional EV/EU (EV / ΣEV)</option>
+              <option value="normal_around_best">Normal around best (Gaussian)</option>
+            </select>
+          </label>
+
+          <label>
+            Normal σ (steps)
+            <input
+              id="proposerNormalSigmaInput"
+              type="number"
+              min="0.2"
+              max="10"
+              step="0.1"
+              value="1.5"
+            />
+            <small class="muted">σ is measured in grid steps (σ = steps × offer step share).</small>
+          </label>
+
+          <label>
             Priors
             <select id="priorsSelect">
               <option value="literature" selected>Literature-based (Prior 2)</option>
@@ -150,6 +172,7 @@
             <p><strong>Bot type:</strong> <span id="snapshotBotType"></span></p>
             <p><strong>Beta used:</strong> <span id="snapshotBetaUsed"></span></p>
             <p><strong>Mixture P(accept):</strong> <span id="snapshotMixturePAccept"></span></p>
+            <p><strong>Proposer selection:</strong> <span id="snapshotProposerSelection"></span></p>
           </div>
         </section>
         <p id="debugMixtureNote" class="muted">

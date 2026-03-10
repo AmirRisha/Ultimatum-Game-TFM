@@ -1,0 +1,17 @@
+group_key,mode,policy_mode,wealth,stake,sessions,mean_accept_rate,sd_accept_rate,mean_avg_offer_share,sd_avg_offer_share,mean_human_payoff,sd_human_payoff,mean_bot_payoff,sd_bot_payoff
+human_responder_vs_bot_proposer|belief|0|20,human_responder_vs_bot_proposer,belief,0,20,1,0.5,0,0.425,0,9,0,11,0
+human_responder_vs_bot_proposer|belief|0|200,human_responder_vs_bot_proposer,belief,0,200,1,1,0,0.45,0,180,0,220,0
+human_responder_vs_bot_proposer|belief|0|2000,human_responder_vs_bot_proposer,belief,0,2000,1,0.5,0,0.4,0,800,0,1200,0
+human_responder_vs_bot_proposer|belief|0|20000,human_responder_vs_bot_proposer,belief,0,20000,1,1,0,0.5,0,20000,0,20000,0
+human_responder_vs_bot_proposer|belief|1|20,human_responder_vs_bot_proposer,belief,1,20,1,1,0,0.4,0,16,0,24,0
+human_responder_vs_bot_proposer|belief|1|200,human_responder_vs_bot_proposer,belief,1,200,1,1,0,0.5,0,200,0,200,0
+human_responder_vs_bot_proposer|belief|1|2000,human_responder_vs_bot_proposer,belief,1,2000,1,1,0,0.4,0,1600,0,2400,0
+human_responder_vs_bot_proposer|belief|1|20000,human_responder_vs_bot_proposer,belief,1,20000,1,1,0,0.3625,0,14500,0,25500,0
+human_proposer_vs_bot_responder|belief|0|20,human_proposer_vs_bot_responder,belief,0,20,1,0.5,0,0.1,0,18,0,2,0
+human_proposer_vs_bot_responder|belief|0|200,human_proposer_vs_bot_responder,belief,0,200,1,1,0,0.365,0,254,0,146,0
+human_proposer_vs_bot_responder|belief|0|2000,human_proposer_vs_bot_responder,belief,0,2000,1,0.5,0,0.0555,0,2000,0,0,0
+human_proposer_vs_bot_responder|belief|0|20000,human_proposer_vs_bot_responder,belief,0,20000,1,0,0,0.0746,0,0,0,0,0
+human_proposer_vs_bot_responder|belief|1|20,human_proposer_vs_bot_responder,belief,1,20,1,0,0,0.1,0,0,0,0,0
+human_proposer_vs_bot_responder|belief|1|200,human_proposer_vs_bot_responder,belief,1,200,1,1,0,0.385,0,246,0,154,0
+human_proposer_vs_bot_responder|belief|1|2000,human_proposer_vs_bot_responder,belief,1,2000,1,0,0,0.1427,0,0,0,0,0
+human_proposer_vs_bot_responder|belief|1|20000,human_proposer_vs_bot_responder,belief,1,20000,1,0.5,0,0.2606,0,14813,0,5187,0

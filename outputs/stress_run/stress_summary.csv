@@ -1,0 +1,17 @@
+group_key,mode,policy_mode,wealth,stake,sessions,mean_accept_rate,sd_accept_rate,mean_avg_offer_share,sd_avg_offer_share,mean_human_payoff,sd_human_payoff,mean_bot_payoff,sd_bot_payoff
+human_responder_vs_bot_proposer|belief|0|20,human_responder_vs_bot_proposer,belief,0,20,10,0.78,0.14,0.437,0.038,34.3,7.1561,43.7,8.1247
+human_responder_vs_bot_proposer|belief|0|200,human_responder_vs_bot_proposer,belief,0,200,10,0.92,0.1327,0.356,0.0944,332,94.3981,588,147.6177
+human_responder_vs_bot_proposer|belief|0|2000,human_responder_vs_bot_proposer,belief,0,2000,10,0.92,0.098,0.4035,0.0497,3815,644.2243,5385,728.7146
+human_responder_vs_bot_proposer|belief|0|20000,human_responder_vs_bot_proposer,belief,0,20000,10,0.88,0.24,0.3915,0.1156,35150,14582.6095,52850,18467.6068
+human_responder_vs_bot_proposer|belief|1|20,human_responder_vs_bot_proposer,belief,1,20,10,0.74,0.201,0.36,0.044,29.3,9.5294,44.7,12.2967
+human_responder_vs_bot_proposer|belief|1|200,human_responder_vs_bot_proposer,belief,1,200,10,0.72,0.2713,0.391,0.0602,291.5,132.2318,428.5,156.3498
+human_responder_vs_bot_proposer|belief|1|2000,human_responder_vs_bot_proposer,belief,1,2000,10,0.82,0.1887,0.375,0.0588,3105,739.0704,5095,1329.7462
+human_responder_vs_bot_proposer|belief|1|20000,human_responder_vs_bot_proposer,belief,1,20000,10,0.82,0.1887,0.3715,0.0879,29700,8994.9986,52300,16115.5205
+human_proposer_vs_bot_responder|belief|0|20,human_proposer_vs_bot_responder,belief,0,20,10,0.3,0.313,0.186,0.1124,19.9,20.0222,10.1,11.9537
+human_proposer_vs_bot_responder|belief|0|200,human_proposer_vs_bot_responder,belief,0,200,10,0.44,0.3666,0.236,0.1283,268.8,207.1486,171.2,163.0171
+human_proposer_vs_bot_responder|belief|0|2000,human_proposer_vs_bot_responder,belief,0,2000,10,0.3,0.3,0.18,0.0951,2165.2,1859.2088,834.8,1239.4585
+human_proposer_vs_bot_responder|belief|0|20000,human_proposer_vs_bot_responder,belief,0,20000,10,0.36,0.2498,0.1693,0.1021,26522.4,13362.1231,9477.6,12403.6742
+human_proposer_vs_bot_responder|belief|1|20,human_proposer_vs_bot_responder,belief,1,20,10,0.54,0.347,0.242,0.1158,36.2,21.844,17.8,13.2197
+human_proposer_vs_bot_responder|belief|1|200,human_proposer_vs_bot_responder,belief,1,200,10,0.62,0.3736,0.2889,0.0955,392.5,237.9606,227.5,142.2858
+human_proposer_vs_bot_responder|belief|1|2000,human_proposer_vs_bot_responder,belief,1,2000,10,0.52,0.4214,0.2201,0.1167,3504.2,2795.9049,1695.8,1479.5824
+human_proposer_vs_bot_responder|belief|1|20000,human_proposer_vs_bot_responder,belief,1,20000,10,0.56,0.398,0.2312,0.1215,37345.7,27302.5231,18654.3,14009.0745

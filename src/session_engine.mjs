@@ -32,6 +32,8 @@ export class RepeatedUltimatumSession {
       proposerEpsilon: Number(config.proposerEpsilon ?? 0.08),
       proposerTemperature: Number(config.proposerTemperature ?? 0.1),
       proposerTrembleProb: Number(config.proposerTrembleProb ?? 0.03),
+      proposerSelectionMode: config.proposerSelectionMode ?? "softmax",
+      proposerNormalSigmaSteps: Number(config.proposerNormalSigmaSteps ?? 1.5),
       responderTemperature: Number(config.responderTemperature ?? 0.08),
       responderTrembleProb: Number(config.responderTrembleProb ?? 0.03),
       beliefLearningRate: Number(config.beliefLearningRate ?? 0.85),
@@ -42,6 +44,7 @@ export class RepeatedUltimatumSession {
       },
       betaMode: config.betaMode ?? DEFAULT_BETA_MODE,
       fixedBeta: Number(config.fixedBeta ?? DEFAULT_FIXED_BETA),
+      offerStepShare: Number(config.offerStepShare ?? 0.025),
       offerGrid: config.offerGrid ?? buildOfferGrid({ stepShare: Number(config.offerStepShare ?? 0.025) }),
     };
     this.fittedParams = { ...DEFAULT_FITTED_PARAMS, ...fittedParams };
@@ -99,6 +102,8 @@ export class RepeatedUltimatumSession {
       bot_profile: { ...this.botProfile },
       proposerGrid: [],
       expectedAcceptProb: null,
+      proposerSelectionMode: this.config.proposerSelectionMode,
+      selectedProb: null,
     };
   }
 
@@ -157,6 +162,9 @@ export class RepeatedUltimatumSession {
       epsilon: this.config.proposerEpsilon,
       temperature: this.config.proposerTemperature,
       trembleProb: this.config.proposerTrembleProb,
+      selectionMode: this.config.proposerSelectionMode,
+      normalSigmaSteps: this.config.proposerNormalSigmaSteps,
+      offerStepShare: Number(this.config.offerStepShare ?? 0.025),
       policyMode: this.config.policyMode,
       automatonType: this.botProfile.automatonType,
       betaUsed: this.botProfile.beta,
@@ -171,6 +179,8 @@ export class RepeatedUltimatumSession {
       expectedValue: offerDecision.expectedValue,
       inferredType: offerDecision.inferredType,
       rationale: offerDecision.rationale,
+      proposerSelectionMode: offerDecision.selectionMode ?? this.config.proposerSelectionMode,
+      selectedProb: offerDecision.selectedProb ?? null,
       beliefsBefore: { ...this.humanResponderBeliefs },
       proposerGrid: offerDecision.debug.candidateEvaluations.map((item) => ({
         offerAmount: item.offerAmount,
@@ -196,6 +206,8 @@ export class RepeatedUltimatumSession {
       bot_profile: { ...this.botProfile },
       proposerGrid: [...this.pendingRound.proposerGrid],
       expectedAcceptProb: offerDecision.expectedAcceptProb,
+      proposerSelectionMode: this.pendingRound.proposerSelectionMode,
+      selectedProb: this.pendingRound.selectedProb,
     };
     return this.pendingRound;
   }
@@ -298,6 +310,8 @@ export class RepeatedUltimatumSession {
       bot_profile: { ...this.botProfile },
       proposerGrid: [...(this.pendingRound.proposerGrid ?? [])],
       expectedAcceptProb: this.pendingRound.expectedAcceptProb,
+      proposerSelectionMode: this.pendingRound.proposerSelectionMode,
+      selectedProb: this.pendingRound.selectedProb,
     };
 
     this.pendingRound = null;
@@ -416,6 +430,8 @@ export class RepeatedUltimatumSession {
       bot_profile: { ...this.botProfile },
       proposerGrid: [],
       expectedAcceptProb: botDecision.expectedAcceptProb,
+      proposerSelectionMode: this.config.proposerSelectionMode,
+      selectedProb: null,
     };
 
     this.roundIndex += 1;

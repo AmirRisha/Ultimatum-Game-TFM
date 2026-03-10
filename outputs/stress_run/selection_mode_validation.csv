@@ -1,0 +1,13 @@
+stake,proposer_selection_mode,rounds,rounds_logged,selection_prob_check,selection_prob_sum
+20,softmax,5,5,not_logged,
+20,proportional_ev,5,5,not_logged,
+20,normal_around_best,5,5,not_logged,
+200,softmax,5,5,not_logged,
+200,proportional_ev,5,5,not_logged,
+200,normal_around_best,5,5,not_logged,
+2000,softmax,5,5,not_logged,
+2000,proportional_ev,5,5,not_logged,
+2000,normal_around_best,5,5,not_logged,
+20000,softmax,5,5,not_logged,
+20000,proportional_ev,5,5,not_logged,
+20000,normal_around_best,5,5,not_logged,

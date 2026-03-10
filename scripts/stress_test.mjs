@@ -11,6 +11,7 @@ import { mulberry32, roundTo } from "../src/utils.mjs";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, "..");
+const PROPOSER_SELECTION_MODES = ["softmax", "proportional_ev", "normal_around_best"];
 
 function parseArgs(argv) {
   const args = {};
@@ -87,6 +88,146 @@ function parseStakesArg(stakesArg) {
     return TARGET_STAKES;
   }
   return [...new Set(parsed)];
+}
+
+function assertFiniteMetric(value, label, context = {}) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || Number.isNaN(numeric)) {
+    throw new Error(`Invalid numeric value for ${label}: ${value}. Context: ${JSON.stringify(context)}`);
+  }
+  return numeric;
+}
+
+function checkSelectionProbabilitySum(candidates = []) {
+  const probabilities = candidates
+    .map((candidate) => Number(candidate?.selectionProb))
+    .filter((value) => Number.isFinite(value));
+  if (probabilities.length === 0) {
+    return { status: "not_logged", sum: null };
+  }
+  const sum = probabilities.reduce((acc, value) => acc + value, 0);
+  const withinTolerance = Math.abs(sum - 1) <= 1e-4;
+  if (!withinTolerance) {
+    throw new Error(
+      `Selection probabilities do not sum to 1 (sum=${sum}).`
+    );
+  }
+  return { status: "ok", sum };
+}
+
+function validateProposerSelectionModes({
+  fittedParams,
+  priors,
+  nnModel,
+  policyMode,
+  baseSeed,
+}) {
+  const rows = [];
+  let validationCounter = 0;
+
+  for (const stake of TARGET_STAKES) {
+    for (const proposerSelectionMode of PROPOSER_SELECTION_MODES) {
+      validationCounter += 1;
+      const rounds = 5;
+      const wealth = 1;
+      const rng = mulberry32(baseSeed + 100000 + validationCounter * 31);
+      const session = new RepeatedUltimatumSession(
+        {
+          mode: MODES.HUMAN_RESPONDER,
+          policyMode,
+          rounds,
+          stake,
+          wealth,
+          proposerSelectionMode,
+          proposerNormalSigmaSteps: 1.5,
+        },
+        {
+          ...fittedParams.coefficients,
+          priors,
+          nnModel,
+        },
+        rng
+      );
+
+      let selectionProbStatus = "not_logged";
+      let selectionProbSum = null;
+
+      while (!session.isComplete()) {
+        const pending = session.startRoundForHumanResponderMode();
+        assertFiniteMetric(pending.expectedAcceptProb, "pending.expectedAcceptProb", {
+          stake,
+          proposerSelectionMode,
+          round: pending.round,
+        });
+        assertFiniteMetric(pending.expectedValue, "pending.expectedValue", {
+          stake,
+          proposerSelectionMode,
+          round: pending.round,
+        });
+
+        const debugState = session.getDebugState();
+        const proposerGrid = Array.isArray(debugState?.proposerGrid)
+          ? debugState.proposerGrid
+          : Array.isArray(pending?.proposerGrid)
+            ? pending.proposerGrid
+            : [];
+        for (const candidate of proposerGrid) {
+          const acceptProbValue =
+            candidate.expectedAcceptProb ?? candidate.acceptProb;
+          assertFiniteMetric(acceptProbValue, "candidate.expectedAcceptProb", {
+            stake,
+            proposerSelectionMode,
+            round: pending.round,
+            offerShare: candidate.offerShare,
+          });
+          assertFiniteMetric(candidate.expectedValue, "candidate.expectedValue", {
+            stake,
+            proposerSelectionMode,
+            round: pending.round,
+            offerShare: candidate.offerShare,
+          });
+        }
+        const probCheck = checkSelectionProbabilitySum(proposerGrid);
+        if (probCheck.status === "ok") {
+          selectionProbStatus = "ok";
+          selectionProbSum = probCheck.sum;
+        }
+
+        const accepted = Number(pending.offerShare) >= 0.2;
+        session.submitHumanResponse(accepted);
+        const lastLog = session.getLogRecords().at(-1);
+        assertFiniteMetric(lastLog?.expected_accept_prob, "log.expected_accept_prob", {
+          stake,
+          proposerSelectionMode,
+          round: pending.round,
+        });
+        assertFiniteMetric(lastLog?.expected_value, "log.expected_value", {
+          stake,
+          proposerSelectionMode,
+          round: pending.round,
+        });
+      }
+
+      const logs = session.getLogRecords();
+      if (logs.length !== rounds || !session.isComplete()) {
+        throw new Error(
+          `Validation session did not complete as expected for stake=${stake}, mode=${proposerSelectionMode}.`
+        );
+      }
+
+      rows.push({
+        stake,
+        proposer_selection_mode: proposerSelectionMode,
+        rounds,
+        rounds_logged: logs.length,
+        selection_prob_check: selectionProbStatus,
+        selection_prob_sum:
+          selectionProbSum === null ? "" : roundTo(selectionProbSum, 6),
+      });
+    }
+  }
+
+  return rows;
 }
 
 async function runStressTest() {
@@ -262,10 +403,29 @@ async function runStressTest() {
   await writeFile(sessionsPath, sessionsCsv);
   await writeFile(summaryPath, summaryCsv);
 
+  const validationRows = validateProposerSelectionModes({
+    fittedParams,
+    priors,
+    nnModel,
+    policyMode,
+    baseSeed,
+  });
+  const validationCsv = toCsv(validationRows, [
+    "stake",
+    "proposer_selection_mode",
+    "rounds",
+    "rounds_logged",
+    "selection_prob_check",
+    "selection_prob_sum",
+  ]);
+  const validationPath = path.join(outDir, "selection_mode_validation.csv");
+  await writeFile(validationPath, validationCsv);
+
   process.stdout.write(`Stress test complete.\n`);
   process.stdout.write(`Sessions: ${sessionRows.length}\n`);
   process.stdout.write(`Wrote ${path.relative(projectRoot, sessionsPath)}\n`);
   process.stdout.write(`Wrote ${path.relative(projectRoot, summaryPath)}\n`);
+  process.stdout.write(`Wrote ${path.relative(projectRoot, validationPath)}\n`);
 }
 
 runStressTest().catch((error) => {

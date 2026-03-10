@@ -43,6 +43,34 @@ export const DEFAULT_FITTED_PARAMS = {
   },
 };
 
+function logit(probability) {
+  const p = clamp(probability, 1e-6, 1 - 1e-6);
+  return Math.log(p / (1 - p));
+}
+
+// Stake-sensitive mixture weight anchors:
+// lambda(20) ~= 0.90 and lambda(20000) ~= 0.15, with
+// lambda(S) = sigmoid(kappa * (ln(S0) - ln(S))).
+const LAMBDA_ANCHOR_STAKE_LOW = 20;
+const LAMBDA_ANCHOR_STAKE_HIGH = 20000;
+const LAMBDA_ANCHOR_VALUE_LOW = 0.9;
+const LAMBDA_ANCHOR_VALUE_HIGH = 0.15;
+const STAKE_SENSITIVE_KAPPA =
+  (logit(LAMBDA_ANCHOR_VALUE_LOW) - logit(LAMBDA_ANCHOR_VALUE_HIGH)) /
+  (Math.log(LAMBDA_ANCHOR_STAKE_HIGH) - Math.log(LAMBDA_ANCHOR_STAKE_LOW));
+const STAKE_SENSITIVE_S0 = Math.exp(
+  Math.log(LAMBDA_ANCHOR_STAKE_LOW) + logit(LAMBDA_ANCHOR_VALUE_LOW) / STAKE_SENSITIVE_KAPPA
+);
+// Derived from anchors above: kappa ~= 0.5692, S0 ~= 949.56.
+
+export function lambdaFromStake(stake) {
+  const safeStake = Math.max(Number(stake) || LAMBDA_ANCHOR_STAKE_LOW, 1e-9);
+  const lambda = sigmoid(
+    STAKE_SENSITIVE_KAPPA * (Math.log(STAKE_SENSITIVE_S0) - Math.log(safeStake))
+  );
+  return clamp(lambda, 0, 1);
+}
+
 function stakeBucket(stake) {
   if (stake <= 110) {
     return 20;
@@ -98,12 +126,9 @@ export function responderAcceptProbability(
   options = {}
 ) {
   const offerShare = clamp(context.offerShare ?? 0, 0, 1);
-  const stake = context.stake ?? 20;
   const wealth = context.wealth === 1 ? 1 : 0;
   const baselineAccept =
     1 - baselineRejectProbability({ ...context, offerShare }, fittedParams, options);
-  const stakeLogScale = Math.log10(stake / 20 + 1);
-  const roundIndex = Math.max(1, context.roundIndex ?? 1);
 
   if (type === "money_maximizer") {
     if (offerShare <= 0) {
@@ -119,10 +144,10 @@ export function responderAcceptProbability(
   }
 
   if (type === "stake_sensitive") {
-    const dynamicThreshold = clamp(0.34 - 0.07 * stakeLogScale, 0.1, 0.36);
-    const fatigue = clamp((roundIndex - 1) * 0.006, 0, 0.05);
-    const stakeAccept = sigmoid((offerShare - (dynamicThreshold - fatigue)) * 20);
-    return clamp(0.75 * stakeAccept + 0.25 * baselineAccept, 0.001, 0.999);
+    const fsProb = responderAcceptProbability("fairness_sensitive", context, fittedParams, options);
+    const mmProb = responderAcceptProbability("money_maximizer", context, fittedParams, options);
+    const lam = lambdaFromStake(context.stake);
+    return clamp(lam * fsProb + (1 - lam) * mmProb, 0.001, 0.999);
   }
 
   if (type === "noisy") {

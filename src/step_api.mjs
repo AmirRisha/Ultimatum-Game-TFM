@@ -32,6 +32,7 @@ function normalizePolicyMode(mode) {
 }
 
 function normalizeConfig(config = {}) {
+  const offerStepShare = Number(config.offerStepShare ?? 0.025);
   return {
     mode: config.mode ?? MODES.HUMAN_RESPONDER,
     policyMode: normalizePolicyMode(config.policyMode),
@@ -42,6 +43,8 @@ function normalizeConfig(config = {}) {
     proposerEpsilon: Number(config.proposerEpsilon ?? 0.08),
     proposerTemperature: Number(config.proposerTemperature ?? 0.1),
     proposerTrembleProb: Number(config.proposerTrembleProb ?? 0.03),
+    proposerSelectionMode: config.proposerSelectionMode ?? "softmax",
+    proposerNormalSigmaSteps: Number(config.proposerNormalSigmaSteps ?? 1.5),
     responderTemperature: Number(config.responderTemperature ?? 0.08),
     responderTrembleProb: Number(config.responderTrembleProb ?? 0.03),
     beliefLearningRate: Number(config.beliefLearningRate ?? 0.85),
@@ -52,9 +55,10 @@ function normalizeConfig(config = {}) {
     },
     betaMode: config.betaMode ?? DEFAULT_BETA_MODE,
     fixedBeta: Number(config.fixedBeta ?? DEFAULT_FIXED_BETA),
+    offerStepShare,
     offerGrid: Array.isArray(config.offerGrid)
       ? config.offerGrid.map((value) => Number(value))
-      : buildOfferGrid({ stepShare: Number(config.offerStepShare ?? 0.025) }),
+      : buildOfferGrid({ stepShare: offerStepShare }),
     seed: Number.isFinite(Number(config.seed)) ? Number(config.seed) : 20260218,
   };
 }
@@ -182,6 +186,8 @@ function createDefaultStateDebug(config, beliefs, botProfile) {
     inferredType: inferred,
     expectedAcceptProb: null,
     proposerGrid: [],
+    proposerSelectionMode: config.proposerSelectionMode,
+    selectedProb: null,
     bot_profile: { ...botProfile },
     beliefs:
       config.mode === MODES.HUMAN_RESPONDER
@@ -289,6 +295,9 @@ function mode1GeneratePending(state, rng) {
     epsilon: config.proposerEpsilon,
     temperature: config.proposerTemperature,
     trembleProb: config.proposerTrembleProb,
+    selectionMode: config.proposerSelectionMode,
+    normalSigmaSteps: config.proposerNormalSigmaSteps,
+    offerStepShare: Number(config.offerStepShare ?? 0.025),
     rng,
   });
 
@@ -300,6 +309,8 @@ function mode1GeneratePending(state, rng) {
     expectedValue: offerDecision.expectedValue,
     inferredType: offerDecision.inferredType,
     rationale: offerDecision.rationale,
+    proposerSelectionMode: offerDecision.selectionMode ?? config.proposerSelectionMode,
+    selectedProb: offerDecision.selectedProb ?? null,
     proposerGrid: offerDecision.debug.candidateEvaluations.map((item) => ({
       offerAmount: item.offerAmount,
       offerShare: item.offerShare,
@@ -323,13 +334,15 @@ function mode1OfferBotAction(pending, state) {
     offer_amount: pending.offerAmount,
     offer_share: pending.offerShare,
     expected_accept_prob: pending.expectedAcceptProb,
-      expected_value: pending.expectedValue,
-      inferred_type: pending.inferredType,
-      decision_rationale: pending.rationale,
-      policy_mode: normalizeStatePolicyMode(state),
-      bot_profile: { ...(state.bot_profile ?? {}) },
-      offer_grid: pending.proposerGrid,
-    };
+    expected_value: pending.expectedValue,
+    inferred_type: pending.inferredType,
+    decision_rationale: pending.rationale,
+    proposer_selection_mode: pending.proposerSelectionMode ?? state.config.proposerSelectionMode,
+    selected_prob: pending.selectedProb,
+    policy_mode: normalizeStatePolicyMode(state),
+    bot_profile: { ...(state.bot_profile ?? {}) },
+    offer_grid: pending.proposerGrid,
+  };
 }
 
 function mode1ResolveRound(state, pending, humanActionAccepted) {
@@ -404,6 +417,8 @@ function mode1ResolveRound(state, pending, humanActionAccepted) {
       inferredType: beliefUpdate.inferred.type,
       expectedAcceptProb: pending.expectedAcceptProb,
       proposerGrid: pending.proposerGrid,
+      proposerSelectionMode: pending.proposerSelectionMode ?? config.proposerSelectionMode,
+      selectedProb: pending.selectedProb ?? null,
       bot_profile: { ...(state.bot_profile ?? {}) },
       beliefs: beliefUpdate.posterior,
     },
@@ -414,6 +429,8 @@ function mode1ResolveRound(state, pending, humanActionAccepted) {
     action: "offer_resolved",
     offer_amount: pending.offerAmount,
     offer_share: pending.offerShare,
+    proposer_selection_mode: pending.proposerSelectionMode ?? config.proposerSelectionMode,
+    selected_prob: pending.selectedProb,
     inferred_type: beliefUpdate.inferred.type,
     decision_rationale: rationale,
     policy_mode: policyMode,
@@ -512,6 +529,8 @@ function mode2ResolveRound(state, humanAction, rng) {
       inferredType: proposerUpdate.inferred.type,
       expectedAcceptProb: botDecision.expectedAcceptProb,
       proposerGrid: [],
+      proposerSelectionMode: config.proposerSelectionMode,
+      selectedProb: null,
       bot_profile: { ...(state.bot_profile ?? {}) },
       beliefs: proposerUpdate.posterior,
     },
@@ -572,6 +591,9 @@ export function step(state, humanAction) {
           inferredType: pending.inferredType,
           expectedAcceptProb: pending.expectedAcceptProb,
           proposerGrid: pending.proposerGrid,
+          proposerSelectionMode:
+            pending.proposerSelectionMode ?? state.config.proposerSelectionMode,
+          selectedProb: pending.selectedProb ?? null,
           bot_profile: { ...(state.bot_profile ?? {}) },
           beliefs: state.beliefs.human_responder,
         },
